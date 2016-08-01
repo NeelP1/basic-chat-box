@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>node client test</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+  <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+</head>
+<body>
+  <div class="container-fluid" id="chat_form">
+  	<div class="row">
+  		<div class="col-md-3 no-float" id="nicknames_list"></div>
+  		<div class="col-md-9 no-float" id="chatBox">
+  			<h3 id="status"></h3>
+  			<div class="box-footer" id="textBox">
+          		<!--<form action="#" method="post">-->
+          		<form onsubmit="return false">
+            		<div class="input-group">
+              			<input id="chat_input" type="text" name="message" placeholder="Type Message ..." class="form-control">
+                  		<span class="input-group-btn">
+                    		<!--<button type="submit" class="btn btn-primary btn-flat">Send</button>-->
+                    		<button type="button" class="btn btn-primary btn-flat">Send</button>
+                  		</span>
+            		</div>
+          		</form>
+        	</div>
+  		</div>
+  	</div>
+  </div>
+
+
+
+  <script>
+    //   console.log('from server: ' + data.hello);
+
+	var server = io.connect('http://localhost:8080');
+  var nickname = "";
+
+	server.on('connect', function(data){
+		$('#status').html('Connected to chatr');
+		nickname = prompt("what is your nickname?");
+
+		server.emit('join', nickname);
+	});
+
+
+  server.on('list', function(nickname_list){
+    $('#nicknames_list').empty();
+        
+    nickname_list.forEach(function(name){
+       $('#nicknames_list').append("<h5>" + name + "</h5>");
+    });
+  });
+
+	$('#chat_form').submit(function(e){
+		var message = $('#chat_input').val();
+    //clear input field? - try .val([]) or .prop("selected", false)
+    $('#chat_input').val('');
+
+		server.emit('messages', message);
+	});
+
+	server.on('messages', function(data){
+    console.log(data);//chat messages
+    if(nickname === data.name){
+      //console.log("success: nickname is equal to data.name");
+      $('#textBox').before("<div class='outer'><div class='bubble me'>" + data.name + ": " + data.content + "</div></div>");
+    }else{
+      //console.log("failure: nickname is not equal to data.name");
+      $('#textBox').before("<div class='outer'><div class='bubble you'>" + data.name + ": " + data.content + "</div></div>");
+    }
+	});
+
+  server.on('chat', function(data){
+    console.log(data);//name of person just joined the chat
+    $('#textBox').before("<div class='outer'><h4>" + data + "</h4></div>");
+  });
+  </script>
+
+</body>
+</html>
